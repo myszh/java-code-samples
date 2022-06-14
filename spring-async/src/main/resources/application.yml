@@ -1,0 +1,38 @@
+server:
+  port: 8080
+
+spring:
+  main:
+    allow-circular-references: true
+
+application:
+  task:
+    executor:
+      defaultExecutor:
+        thread-name-prefix: primaryExecutor # bean name
+        daemon: false
+        rejected-execution-handler: CallerRunsPolicy
+        shutdown:
+          await-termination: true # 是否应等待已经提交的任务在关闭时完成
+          await-termination-period: 1m # 等待剩余任务完成的最长时间
+        pool:
+          core-size: 10 # 核心线程数
+          allow-core-thread-timeout: true # 核心线程在保持活动时间内没有任务到达时是否超时和终止的策略
+          queue-capacity: 1000 # 队列容量。无限容量不会增加池，因此会忽略"max-size"属性
+          max-size: 10 # 允许的最大线程数。如果任务正在填满队列，则池可以扩展到该大小以适应负载。如果队列没有边界，则忽略。
+          keep-alive: 1m # 线程在终止前可能保持空闲的时间限制。
+      executors:
+        - name: xxxExecutor
+          lazy-init: true
+          primary: false
+          daemon: true
+          rejected-execution-handler: DiscardPolicy
+          shutdown:
+            await-termination: true
+            await-termination-period: 1m
+          pool:
+            core-size: 10
+            allow-core-thread-timeout: true
+            queue-capacity: 1000
+            max-size: 10
+            keep-alive: 1m
