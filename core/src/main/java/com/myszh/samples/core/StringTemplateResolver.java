@@ -5,22 +5,6 @@
 package com.myszh.samples.core;
 
 import com.myszh.samples.core.exception.StringResolveException;
-import org.springframework.asm.MethodVisitor;
-import org.springframework.core.convert.support.DefaultConversionService;
-import org.springframework.expression.EvaluationContext;
-import org.springframework.expression.Expression;
-import org.springframework.expression.TypedValue;
-import org.springframework.expression.common.TemplateParserContext;
-import org.springframework.expression.spel.CodeFlow;
-import org.springframework.expression.spel.CompilablePropertyAccessor;
-import org.springframework.expression.spel.standard.SpelExpressionParser;
-import org.springframework.expression.spel.support.StandardEvaluationContext;
-import org.springframework.expression.spel.support.StandardTypeConverter;
-import org.springframework.util.Assert;
-import org.springframework.util.PropertyPlaceholderHelper;
-import org.springframework.util.PropertyPlaceholderHelper.PlaceholderResolver;
-import org.springframework.util.StringUtils;
-
 import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
@@ -34,21 +18,34 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.springframework.asm.MethodVisitor;
+import org.springframework.core.convert.support.DefaultConversionService;
+import org.springframework.expression.EvaluationContext;
+import org.springframework.expression.Expression;
+import org.springframework.expression.TypedValue;
+import org.springframework.expression.common.TemplateParserContext;
+import org.springframework.expression.spel.CodeFlow;
+import org.springframework.expression.spel.CompilablePropertyAccessor;
+import org.springframework.expression.spel.SpelParserConfiguration;
+import org.springframework.expression.spel.standard.SpelExpressionParser;
+import org.springframework.expression.spel.support.StandardEvaluationContext;
+import org.springframework.expression.spel.support.StandardTypeConverter;
+import org.springframework.util.Assert;
+import org.springframework.util.PropertyPlaceholderHelper;
+import org.springframework.util.PropertyPlaceholderHelper.PlaceholderResolver;
+import org.springframework.util.StringUtils;
 
 /**
- * 字符串模板解析器,基于Spring的core expression两个核心包
- * 1、支持占位符 ${application.name}
- * 2、支持SpEL(Spring Expression Language)如： #{person.name} #{1+2}
- * SpEL更多介绍参考Spring官方文档：
- * https://docs.spring.io/spring-framework/docs/current/reference/html/core.html#expressions
+ * 字符串模板解析器,基于Spring的core expression两个核心包 1、支持占位符 ${application.name} 2、支持SpEL(Spring Expression
+ * Language)如： #{person.name} #{1+2} SpEL更多介绍参考Spring官方文档： https://docs.spring.io/spring-framework/docs/current/reference/html/core.html#expressions
  *
  * @author LuoQuan
- * @see org.springframework.util.PropertyPlaceholderHelper
- * org.springframework.beans.factory.config.EmbeddedValueResolver
+ * @see org.springframework.util.PropertyPlaceholderHelper org.springframework.beans.factory.config.EmbeddedValueResolver
  * org.springframework.context.expression.StandardBeanExpressionResolver
  * @since 2022/6/11
  */
 public class StringTemplateResolver {
+
     /**
      * 单实例
      */
@@ -168,7 +165,8 @@ public class StringTemplateResolver {
             return value;
         }
         StandardEvaluationContext exprContext = new StandardEvaluationContext(context);
-        exprContext.setTypeConverter(new StandardTypeConverter(DefaultConversionService::getSharedInstance));
+        exprContext.setTypeConverter(
+            new StandardTypeConverter(DefaultConversionService::getSharedInstance));
         exprContext.addPropertyAccessor(mapAccessor);
 
         return Optional.of(getExpression(value))
@@ -186,7 +184,10 @@ public class StringTemplateResolver {
     private Expression getExpression(String value) {
         Expression expr = expressionCache.get(value);
         if (expr == null) {
-            expr = new SpelExpressionParser().parseExpression(value, new TemplateParserContext());
+            expr = new SpelExpressionParser(
+                // 遇到null,自动增长
+                new SpelParserConfiguration(true, true))
+                .parseExpression(value, new TemplateParserContext());
             expressionCache.put(value, expr);
         }
         return expr;
@@ -264,6 +265,7 @@ public class StringTemplateResolver {
      * 可读的属性
      */
     static class PropertyReadable {
+
         /**
          * 属性名称
          */
@@ -321,6 +323,7 @@ public class StringTemplateResolver {
      * Map Accessor:读取context是map的
      */
     private static class MapAccessor implements CompilablePropertyAccessor {
+
         @Override
         public Class<?>[] getSpecificTargetClasses() {
             return new Class<?>[]{Map.class};
@@ -337,7 +340,8 @@ public class StringTemplateResolver {
             Map<?, ?> map = (Map<?, ?>) target;
             Object value = map.get(name);
             if (value == null && !map.containsKey(name)) {
-                throw new StringResolveException("Map does not contain a value for key '" + name + "'");
+                throw new StringResolveException(
+                    "Map does not contain a value for key '" + name + "'");
             }
             if (value instanceof Supplier) {
                 value = ((Supplier<?>) value).get();
@@ -347,14 +351,14 @@ public class StringTemplateResolver {
 
         @Override
         public boolean canWrite(EvaluationContext context,
-                                Object target, String name) {
+            Object target, String name) {
             return true;
         }
 
         @Override
         @SuppressWarnings({"unchecked"})
         public void write(EvaluationContext context, Object target,
-                          String name, Object newValue) {
+            String name, Object newValue) {
             Assert.state(target instanceof Map, "Target must be a Map");
             Map<Object, Object> map = (Map<Object, Object>) target;
             map.put(name, newValue);
