@@ -15,7 +15,7 @@
     <version>0.0.1-SNAPSHOT</version>
 
     <name>data-load</name>
-    <description>数据加载</description>
+    <description>引用数据加载</description>
 
 
     <properties>

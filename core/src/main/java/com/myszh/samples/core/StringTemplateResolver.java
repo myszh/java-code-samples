@@ -36,8 +36,10 @@ import org.springframework.util.PropertyPlaceholderHelper.PlaceholderResolver;
 import org.springframework.util.StringUtils;
 
 /**
- * 字符串模板解析器,基于Spring的core expression两个核心包 1、支持占位符 ${application.name} 2、支持SpEL(Spring Expression
- * Language)如： #{person.name} #{1+2} SpEL更多介绍参考Spring官方文档： https://docs.spring.io/spring-framework/docs/current/reference/html/core.html#expressions
+ * 字符串模板解析器,基于Spring的core expression两个核心包
+ * <li>支持占位符 ${application.name}
+ * <li>支持SpEL(Spring Expression Language)如： #{person.name} #{1+2}
+ * SpEL更多介绍参考Spring官方文档： https://docs.spring.io/spring-framework/docs/current/reference/html/core.html#expressions
  *
  * @author LuoQuan
  * @see org.springframework.util.PropertyPlaceholderHelper org.springframework.beans.factory.config.EmbeddedValueResolver
