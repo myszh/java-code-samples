@@ -13,6 +13,7 @@ import java.util.function.Predicate;
 import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.boot.context.properties.source.ConfigurationProperty;
 import org.springframework.boot.context.properties.source.ConfigurationPropertyName;
+import org.springframework.util.StringUtils;
 
 /**
  * POJOBuilder默认实现
@@ -37,7 +38,7 @@ public class DefaultPOJOBuilder implements POJOBuilder {
         this(new POJOPropertyValueTemplateProvider() {
                  @Override
                  public String getValueTemplate(String parentPropertyName, String propertyName) {
-                     return properties.getProperty(parentPropertyName + "." + propertyName);
+                     return properties.getProperty(propertyName);
                  }
              },
             StringTemplateResolver.getInstance());
@@ -74,7 +75,13 @@ public class DefaultPOJOBuilder implements POJOBuilder {
             name.getParent().toString(),
             name.toString());
         // 解析
-        String value = templateResolver.parse(valueTemplate, buildContext);
+        if (Objects.isNull(valueTemplate)) {
+            return null;
+        }
+        String value = valueTemplate;
+        if (StringUtils.hasText(valueTemplate)) {
+            value = templateResolver.parse(valueTemplate, buildContext);
+        }
         return new ConfigurationProperty(name, value, null);
     }
 }

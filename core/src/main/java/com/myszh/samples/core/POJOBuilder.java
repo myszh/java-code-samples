@@ -13,6 +13,7 @@ import java.util.function.Predicate;
  * @author LuoQuan
  * @since 2022/6/19
  */
+@FunctionalInterface
 public interface POJOBuilder {
 
     /**

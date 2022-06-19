@@ -98,6 +98,9 @@ public class StringTemplateResolver {
      * @return String
      */
     public String parse(String template, Object context) {
+        if (context instanceof MultiContext) {
+            return parse(template, (MultiContext) context);
+        }
         return parse(template, context, false);
     }
 
@@ -220,7 +223,7 @@ public class StringTemplateResolver {
         if (context instanceof Map) {
             Map<?, ?> placeholderValueMap = (Map<?, ?>) context;
             return key -> Optional.ofNullable(placeholderValueMap.get(key))
-                .map(Object::toString)
+                .map(this::readString)
                 .orElse(null);
         }
         Map<String, PropertyReadable> properties = getReadableProperties(context);
@@ -261,6 +264,15 @@ public class StringTemplateResolver {
         return propertyMap;
     }
 
+    @SuppressWarnings({"unchecked"})
+    private String readString(Object obj) {
+        Object value = obj;
+        if (obj instanceof Supplier) {
+            value = ((Supplier<Object>) obj).get();
+        }
+        return value == null ? null : value.toString();
+    }
+
     /**
      * 可读的属性
      */
@@ -292,7 +304,7 @@ public class StringTemplateResolver {
             }
             try {
                 return Optional.ofNullable(readMethod.invoke(instance))
-                    .map(Object::toString)
+                    .map(sharedInstance::readString)
                     .orElse(null);
             } catch (IllegalAccessException | InvocationTargetException e) {
                 throw new StringResolveException(

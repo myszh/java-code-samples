@@ -8,19 +8,13 @@ import java.math.BigDecimal;
 import lombok.Data;
 
 /**
- * 动物
+ * 组织器官
  *
  * @author LuoQuan
- * @since 2022/6/19
+ * @since 2022/6/20
  */
 @Data
-public class Animal {
-
-    private String name;
-
-    private String subjects;
+public class Organ {
 
     private BigDecimal weight;
-
-    private Organ heart;
 }

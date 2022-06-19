@@ -4,6 +4,7 @@
 
 package com.myszh.samples.core.pojo;
 
+import java.math.BigDecimal;
 import lombok.Data;
 
 /**
@@ -17,7 +18,7 @@ public class User {
 
     private String name;
 
-    private String age;
+    private BigDecimal age;
 
     private User friend;
 
