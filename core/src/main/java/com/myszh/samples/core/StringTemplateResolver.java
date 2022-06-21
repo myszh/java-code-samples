@@ -18,14 +18,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.springframework.asm.MethodVisitor;
+import org.springframework.context.expression.MapAccessor;
 import org.springframework.core.convert.support.DefaultConversionService;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.Expression;
 import org.springframework.expression.TypedValue;
 import org.springframework.expression.common.TemplateParserContext;
-import org.springframework.expression.spel.CodeFlow;
-import org.springframework.expression.spel.CompilablePropertyAccessor;
 import org.springframework.expression.spel.SpelParserConfiguration;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
@@ -75,7 +73,22 @@ public class StringTemplateResolver {
     /**
      * Map Accessor
      */
-    private final MapAccessor mapAccessor = new MapAccessor();
+    private final MapAccessor mapAccessor = new MapAccessor() {
+        @Override
+        public TypedValue read(EvaluationContext context, Object target, String name) {
+            Assert.state(target instanceof Map, "Target must be of type Map");
+            Map<?, ?> dataMap = (Map<?, ?>) target;
+            Object value = dataMap.get(name);
+            if (value == null && !dataMap.containsKey(name)) {
+                throw new StringResolveException(
+                    "Map does not contain a value for key '" + name + "'");
+            }
+            if (value instanceof Supplier) {
+                value = ((Supplier<?>) value).get();
+            }
+            return new TypedValue(value);
+        }
+    };
 
     /**
      * 私有化构造器，单实例对象
@@ -330,77 +343,6 @@ public class StringTemplateResolver {
          */
         private String getName() {
             return propertyDescriptor.getName();
-        }
-    }
-
-    /**
-     * Map Accessor:读取context是map的
-     */
-    private static class MapAccessor implements CompilablePropertyAccessor {
-
-        @Override
-        public Class<?>[] getSpecificTargetClasses() {
-            return new Class<?>[]{Map.class};
-        }
-
-        @Override
-        public boolean canRead(EvaluationContext context, Object target, String name) {
-            return (target instanceof Map && ((Map<?, ?>) target).containsKey(name));
-        }
-
-        @Override
-        public TypedValue read(EvaluationContext context, Object target, String name) {
-            Assert.state(target instanceof Map, "Target must be of type Map");
-            Map<?, ?> map = (Map<?, ?>) target;
-            Object value = map.get(name);
-            if (value == null && !map.containsKey(name)) {
-                throw new StringResolveException(
-                    "Map does not contain a value for key '" + name + "'");
-            }
-            if (value instanceof Supplier) {
-                value = ((Supplier<?>) value).get();
-            }
-            return new TypedValue(value);
-        }
-
-        @Override
-        public boolean canWrite(EvaluationContext context,
-            Object target, String name) {
-            return true;
-        }
-
-        @Override
-        @SuppressWarnings({"unchecked"})
-        public void write(EvaluationContext context, Object target,
-            String name, Object newValue) {
-            Assert.state(target instanceof Map, "Target must be a Map");
-            Map<Object, Object> map = (Map<Object, Object>) target;
-            map.put(name, newValue);
-        }
-
-        @Override
-        public boolean isCompilable() {
-            return true;
-        }
-
-        @Override
-        public Class<?> getPropertyType() {
-            return Object.class;
-        }
-
-        @Override
-        public void generateCode(String propertyName, MethodVisitor mv, CodeFlow cf) {
-            String descriptor = cf.lastDescriptor();
-            if (descriptor == null || !descriptor.equals("Ljava/util/Map")) {
-                if (descriptor == null) {
-                    cf.loadTarget(mv);
-                }
-                CodeFlow.insertCheckCast(mv, "Ljava/util/Map");
-            }
-            mv.visitLdcInsn(propertyName);
-            mv.visitMethodInsn(
-                INVOKEINTERFACE, "java/util/Map", "get",
-                "(Ljava/lang/Object;)Ljava/lang/Object;", true);
         }
     }
 }
